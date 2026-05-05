@@ -1289,6 +1289,7 @@ https://zhuanlan.zhihu.com/p/2016049817437111235
 如有问题，请联系作者：**johnsongzc**
 
 ![weichat.png](doc/weichat.png)
+支持作者请点击这个医学app的推荐链接： https://api.infox-med.com/system/scanqr/vaf2L3-4d2988cd45f249fcbff89aebc93cd579
 
 ---
 
