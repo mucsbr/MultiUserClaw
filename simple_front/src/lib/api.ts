@@ -387,6 +387,70 @@ export async function getMe(): Promise<AuthUser> {
 }
 
 // ---------------------------------------------------------------------------
+// Cron Jobs
+// ---------------------------------------------------------------------------
+
+export interface CronJob {
+  id: string
+  name: string
+  enabled: boolean
+  schedule_kind: string
+  schedule_display: string
+  schedule_expr: string | null
+  schedule_every_ms: number | null
+  message: string
+  deliver: boolean
+  channel: string | null
+  to: string | null
+  next_run_at_ms: number | null
+  last_run_at_ms: number | null
+  last_status: string | null
+  last_error: string | null
+  created_at_ms: number
+}
+
+export async function listCronJobs(includeDisabled = true): Promise<CronJob[]> {
+  const params = includeDisabled ? '?include_disabled=true' : ''
+  return fetchJSON<CronJob[]>(`/api/openclaw/cron/jobs${params}`)
+}
+
+export async function createCronJob(params: {
+  name: string
+  message: string
+  every_seconds?: number
+  cron_expr?: string
+  at_iso?: string
+}): Promise<CronJob> {
+  return fetchJSON<CronJob>('/api/openclaw/cron/jobs', {
+    method: 'POST',
+    body: JSON.stringify(params),
+  })
+}
+
+export async function deleteCronJob(jobId: string): Promise<void> {
+  await fetchJSON<unknown>(`/api/openclaw/cron/jobs/${encodeURIComponent(jobId)}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function toggleCronJob(jobId: string, enabled: boolean): Promise<CronJob> {
+  return fetchJSON<CronJob>(
+    `/api/openclaw/cron/jobs/${encodeURIComponent(jobId)}/toggle`,
+    {
+      method: 'PUT',
+      body: JSON.stringify({ enabled }),
+    },
+  )
+}
+
+export async function runCronJob(jobId: string): Promise<void> {
+  await fetchJSON<unknown>(
+    `/api/openclaw/cron/jobs/${encodeURIComponent(jobId)}/run`,
+    { method: 'POST' },
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Agent functions
 // ---------------------------------------------------------------------------
 

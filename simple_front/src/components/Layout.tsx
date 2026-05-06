@@ -1,12 +1,14 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Check,
   Copy,
   BookOpen,
   Bot,
   ChevronRight,
+  Clock,
   LayoutDashboard,
+  Loader2,
   LogOut,
   Menu,
   Maximize2,
@@ -24,6 +26,7 @@ import IconButton from './ui/IconButton.tsx'
 import Popconfirm from './ui/Popconfirm.tsx'
 import {
   deleteSession,
+  getAccessToken,
   getMe,
   listAgents,
   listSessions,
@@ -40,6 +43,8 @@ export type LayoutOutletContext = {
   refreshAgents: (options?: { force?: boolean }) => Promise<void>
   refreshSessions: (options?: { silent?: boolean; force?: boolean }) => Promise<void>
   addOptimisticSession: (session: Session) => void
+  markSessionRead: (key: string) => void
+  setSessionThinking: (key: string, thinking: boolean) => void
   openMobileSidebar: () => void
 }
 
@@ -59,10 +64,12 @@ const primaryNav = [
   { to: '/chat', label: '新对话', icon: Pencil },
   { to: '/dashboard', label: '工作台', icon: LayoutDashboard },
   { to: '/knowledge', label: '知识库', icon: BookOpen },
+  { to: '/cron', label: '定时任务', icon: Clock },
   { to: '/settings', label: '设置', icon: SettingsIcon },
 ]
 
 const retiredBuiltInAgentIds = new Set(['manager', 'programmer', 'researcher', 'hr', 'doctor'])
+const unreadSessionsStorageKey = 'openclaw_unread_sessions'
 
 function getSessionTitle(session: Session): string {
   return session.title?.trim() || session.key.split(':').pop() || session.key
@@ -90,7 +97,7 @@ function formatRelativeTime(iso: string | null): string {
   const minute = 60 * 1000
   const hour = 60 * minute
   const day = 24 * hour
-  if (diffMs < hour) return `${Math.max(1, Math.round(diffMs / minute))} 分`
+  if (diffMs < hour) return `${Math.max(1, Math.round(diffMs / minute))} 分钟`
   if (diffMs < day) return `${Math.round(diffMs / hour)} 小时`
   return `${Math.round(diffMs / day)} 天`
 }
@@ -99,6 +106,25 @@ function getAgentIdFromKey(key: string): string {
   const parts = key.split(':')
   if (parts.length >= 2 && parts[0] === 'agent') return parts[1]
   return 'main'
+}
+
+function normalizeSessionKey(key: string): string {
+  return key.replace(/:/g, '')
+}
+
+function loadUnreadSessionKeys(): Set<string> {
+  try {
+    const raw = localStorage.getItem(unreadSessionsStorageKey)
+    const parsed = raw ? JSON.parse(raw) : []
+    if (!Array.isArray(parsed)) return new Set()
+    return new Set(parsed.filter(item => typeof item === 'string'))
+  } catch {
+    return new Set()
+  }
+}
+
+function persistUnreadSessionKeys(keys: Set<string>): void {
+  localStorage.setItem(unreadSessionsStorageKey, JSON.stringify(Array.from(keys)))
 }
 
 async function copyText(value: string): Promise<void> {
@@ -133,6 +159,28 @@ function SidebarSessionSkeleton({ count = 4 }: { count?: number }) {
   )
 }
 
+function SessionStatusIndicator({ loading, unread }: { loading: boolean; unread: boolean }) {
+  if (loading) {
+    return (
+      <Loader2
+        size={12}
+        aria-label="AI 正在回复"
+        className="shrink-0 animate-spin text-[var(--color-accent-blue)]"
+      />
+    )
+  }
+
+  if (!unread) return null
+
+  return (
+    <span
+      aria-label="AI 有未读回复"
+      title="AI 有未读回复"
+      className="h-2 w-2 shrink-0 rounded-full bg-[var(--color-accent-blue)] shadow-[0_0_0_2px_var(--color-light-card),0_0_8px_color-mix(in_srgb,var(--color-accent-blue)_45%,transparent)]"
+    />
+  )
+}
+
 export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -151,11 +199,54 @@ export default function Layout() {
   const [ordinaryFolderOpen, setOrdinaryFolderOpen] = useState(true)
   const [collapsedAgents, setCollapsedAgents] = useState<Record<string, boolean>>({})
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [unreadSessionKeys, setUnreadSessionKeys] = useState<Set<string>>(() => loadUnreadSessionKeys())
+  const [loadingSessionKeys, setLoadingSessionKeys] = useState<Set<string>>(() => new Set())
+  const activeSessionKeyRef = useRef<string | null>(null)
+  const knownSessionKeysRef = useRef<string[]>([])
 
   const activeSessionKey = useMemo(() => {
     const params = new URLSearchParams(location.search)
     return params.get('session')
   }, [location.search])
+
+  useEffect(() => {
+    activeSessionKeyRef.current = activeSessionKey
+  }, [activeSessionKey])
+
+  const markSessionUnread = useCallback((key: string) => {
+    setUnreadSessionKeys(prev => {
+      if (prev.has(key)) return prev
+      const next = new Set(prev)
+      next.add(key)
+      persistUnreadSessionKeys(next)
+      return next
+    })
+  }, [])
+
+  const markSessionRead = useCallback((key: string) => {
+    setUnreadSessionKeys(prev => {
+      if (!prev.has(key)) return prev
+      const next = new Set(prev)
+      next.delete(key)
+      persistUnreadSessionKeys(next)
+      return next
+    })
+  }, [])
+
+  const setSessionThinking = useCallback((key: string, loading: boolean) => {
+    setLoadingSessionKeys(prev => {
+      if (loading && prev.has(key)) return prev
+      if (!loading && !prev.has(key)) return prev
+
+      const next = new Set(prev)
+      if (loading) {
+        next.add(key)
+      } else {
+        next.delete(key)
+      }
+      return next
+    })
+  }, [])
 
   const refreshSessions = useCallback(async (options: { silent?: boolean; force?: boolean } = {}) => {
     if (!options.silent) {
@@ -229,6 +320,68 @@ export default function Layout() {
       ...sessions,
     ].filter(session => isUserChatSession(session) && !isSystemSession(session))
   }, [optimisticSessions, sessions])
+
+  useEffect(() => {
+    knownSessionKeysRef.current = [
+      ...new Set([
+        ...visibleSessions.map(session => session.key),
+        ...(activeSessionKey ? [activeSessionKey] : []),
+      ]),
+    ]
+  }, [activeSessionKey, visibleSessions])
+
+  const resolveKnownSessionKey = useCallback((rawKey: string): string => {
+    const normalized = normalizeSessionKey(rawKey)
+    return knownSessionKeysRef.current.find(key => normalizeSessionKey(key) === normalized) || rawKey
+  }, [])
+
+  useEffect(() => {
+    if (activeSessionKey) {
+      markSessionRead(activeSessionKey)
+    }
+  }, [activeSessionKey, markSessionRead])
+
+  useEffect(() => {
+    const token = getAccessToken()
+    if (!token) return
+
+    const sse = new EventSource(`/api/openclaw/events/stream?token=${encodeURIComponent(token)}`)
+    sse.onmessage = event => {
+      try {
+        const message = JSON.parse(event.data)
+        if (message.event !== 'chat' || !message.payload) return
+
+        const state = message.payload.state
+        const rawSessionKey = String(message.payload.sessionKey || '')
+        if (!rawSessionKey) return
+
+        const sessionKey = resolveKnownSessionKey(rawSessionKey)
+        if (state === 'started' || state === 'delta') {
+          setSessionThinking(sessionKey, true)
+          if (state === 'started') {
+            void refreshSessions({ silent: true, force: true })
+          }
+          return
+        }
+
+        if (state === 'final' || state === 'error' || state === 'aborted') {
+          setSessionThinking(sessionKey, false)
+          if (state === 'final') {
+            if (sessionKey === activeSessionKeyRef.current) {
+              markSessionRead(sessionKey)
+            } else {
+              markSessionUnread(sessionKey)
+              void refreshSessions({ silent: true, force: true })
+            }
+          }
+        }
+      } catch {
+        // Ignore malformed stream events; chat page still handles its own stream state.
+      }
+    }
+
+    return () => sse.close()
+  }, [markSessionRead, markSessionUnread, refreshSessions, resolveKnownSessionKey, setSessionThinking])
 
   const currentSessionTitle = useMemo(() => {
     if (!activeSessionKey) return null
@@ -449,6 +602,8 @@ export default function Layout() {
                       {group.sessions.slice(0, 6).map(session => {
                         const isActive = activeSessionKey === session.key
                         const isRenaming = renamingKey === session.key
+                        const hasUnread = unreadSessionKeys.has(session.key)
+                        const isLoading = loadingSessionKeys.has(session.key)
                         return (
                           <div
                             key={session.key}
@@ -492,12 +647,16 @@ export default function Layout() {
                             ) : (
                               <button
                                 onClick={() => {
+                                  markSessionRead(session.key)
                                   setMobileSidebarOpen(false)
                                   navigate(`/chat?session=${encodeURIComponent(session.key)}`)
                                 }}
                                 className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
                               >
-                                <span className="truncate text-sm">{getSessionTitle(session)}</span>
+                                <span className="flex min-w-0 items-center gap-1.5">
+                                  <span className="truncate text-sm">{getSessionTitle(session)}</span>
+                                  <SessionStatusIndicator loading={isLoading} unread={hasUnread} />
+                                </span>
                                 <span className="ml-auto shrink-0 text-xs text-slate-400">
                                   {copiedKey === session.key ? '已复制' : formatRelativeTime(session.updated_at)}
                                 </span>
@@ -556,6 +715,8 @@ export default function Layout() {
                   ) : ordinarySessions.slice(0, 8).map(session => {
                     const isActive = activeSessionKey === session.key
                     const isRenaming = renamingKey === session.key
+                    const hasUnread = unreadSessionKeys.has(session.key)
+                    const isLoading = loadingSessionKeys.has(session.key)
                     return (
                       <div
                         key={session.key}
@@ -599,12 +760,16 @@ export default function Layout() {
                         ) : (
                           <button
                             onClick={() => {
+                              markSessionRead(session.key)
                               setMobileSidebarOpen(false)
                               navigate(`/chat?session=${encodeURIComponent(session.key)}`)
                             }}
                             className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 text-left"
                           >
-                            <span className="truncate text-sm">{getSessionTitle(session)}</span>
+                            <span className="flex min-w-0 items-center gap-1.5">
+                              <span className="truncate text-sm">{getSessionTitle(session)}</span>
+                              <SessionStatusIndicator loading={isLoading} unread={hasUnread} />
+                            </span>
                             <span className="ml-auto shrink-0 text-xs text-slate-400">
                               {copiedKey === session.key ? '已复制' : formatRelativeTime(session.updated_at)}
                             </span>
@@ -656,6 +821,8 @@ export default function Layout() {
             refreshAgents,
             refreshSessions,
             addOptimisticSession,
+            markSessionRead,
+            setSessionThinking,
             openMobileSidebar: () => setMobileSidebarOpen(true),
           } satisfies LayoutOutletContext}
         />

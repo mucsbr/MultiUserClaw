@@ -4,18 +4,11 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Code2,
-  GitBranch,
   Loader2,
-  Monitor,
   Palette,
-  Settings as SettingsIcon,
   ShieldCheck,
-  SlidersHorizontal,
   Sun,
   Trash2,
-  TreePine,
-  UserRoundCog,
 } from 'lucide-react'
 import AgentCreatePanel from '../components/AgentCreatePanel.tsx'
 import IconButton from '../components/ui/IconButton.tsx'
@@ -37,14 +30,8 @@ import {
 } from '../lib/api.ts'
 
 const tabs = [
-  { id: 'general', label: '常规', icon: SettingsIcon },
   { id: 'appearance', label: '外观', icon: Palette },
   { id: 'agents', label: 'Agents', icon: Bot },
-  { id: 'config', label: '配置', icon: SlidersHorizontal },
-  { id: 'personal', label: '个性化', icon: UserRoundCog },
-  { id: 'worktree', label: '工作树', icon: TreePine },
-  { id: 'browser', label: '浏览器使用', icon: Monitor },
-  { id: 'git', label: 'Git', icon: GitBranch },
 ] as const
 
 const accentOptions = [
@@ -570,20 +557,8 @@ export default function Settings() {
                   恢复默认外观
                 </button>
               </div>
-            ) : activeTab === 'agents' ? (
-              <AgentsSettings />
             ) : (
-              <section className="mt-8 rounded-xl border border-light-border bg-light-card p-6">
-                <div className="flex items-start gap-3">
-                  <Code2 size={18} className="mt-0.5 text-accent-blue" />
-                  <div>
-                    <h2 className="text-base font-semibold text-light-text">{activeLabel}设置</h2>
-                    <p className="mt-2 max-w-xl text-sm leading-6 text-light-text-secondary">
-                      这里会承载后续的产品配置项。当前先保留清爽入口，避免工作台展示过多复杂信息。
-                    </p>
-                  </div>
-                </div>
-              </section>
+              <AgentsSettings />
             )}
           </div>
         </main>

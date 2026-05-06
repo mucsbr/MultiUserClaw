@@ -106,6 +106,47 @@ const agentDescriptions: Record<string, string> = {
   'writing-desk': '撰写邮件、方案、纪要、文案和润色稿',
 }
 
+function ChatHistorySkeleton() {
+  return (
+    <div className="mx-auto max-w-3xl space-y-5 py-2" aria-label="正在加载会话记录">
+      <div className="flex justify-end gap-3">
+        <div className="flex w-full max-w-[64%] flex-col items-end gap-2">
+          <div className="skeleton-shimmer h-11 w-full rounded-xl" />
+          <div className="skeleton-shimmer h-2.5 w-16 rounded-full" />
+        </div>
+        <div className="skeleton-shimmer mt-0.5 h-7 w-7 shrink-0 rounded-full" />
+      </div>
+
+      <div className="flex gap-3">
+        <div className="skeleton-shimmer mt-0.5 h-7 w-7 shrink-0 rounded-full" />
+        <div className="w-full max-w-[78%] rounded-xl border border-light-border bg-light-card px-4 py-3">
+          <div className="skeleton-shimmer h-3.5 w-11/12 rounded-full" />
+          <div className="skeleton-shimmer mt-2.5 h-3.5 w-full rounded-full" />
+          <div className="skeleton-shimmer mt-2.5 h-3.5 w-8/12 rounded-full" />
+          <div className="skeleton-shimmer mt-3 h-2.5 w-14 rounded-full" />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-3">
+        <div className="flex w-full max-w-[52%] flex-col items-end gap-2">
+          <div className="skeleton-shimmer h-10 w-full rounded-xl" />
+          <div className="skeleton-shimmer h-2.5 w-14 rounded-full" />
+        </div>
+        <div className="skeleton-shimmer mt-0.5 h-7 w-7 shrink-0 rounded-full" />
+      </div>
+
+      <div className="flex gap-3">
+        <div className="skeleton-shimmer mt-0.5 h-7 w-7 shrink-0 rounded-full" />
+        <div className="w-full max-w-[72%] rounded-xl border border-light-border bg-light-card px-4 py-3">
+          <div className="skeleton-shimmer h-3.5 w-full rounded-full" />
+          <div className="skeleton-shimmer mt-2.5 h-3.5 w-9/12 rounded-full" />
+          <div className="skeleton-shimmer mt-3 h-2.5 w-14 rounded-full" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Chat() {
   const [searchParams, setSearchParams] = useSearchParams()
   const {
@@ -115,6 +156,7 @@ export default function Chat() {
     refreshAgents,
     refreshSessions,
     addOptimisticSession,
+    setSessionThinking,
     openMobileSidebar,
   } = useOutletContext<LayoutOutletContext>()
 
@@ -139,6 +181,7 @@ export default function Chat() {
   const sessionMessagesCacheRef = useRef<Record<string, SessionDetail['messages']>>({})
 
   const setSendingForSession = useCallback((key: string, value: boolean) => {
+    setSessionThinking(key, value)
     setSendingBySession(prev => {
       const next = { ...prev }
       if (value) {
@@ -149,7 +192,7 @@ export default function Chat() {
       sendingBySessionRef.current = next
       return next
     })
-  }, [])
+  }, [setSessionThinking])
 
   const clearStreamingText = useCallback((key: string) => {
     targetTextBySessionRef.current[key] = ''
@@ -1026,16 +1069,18 @@ export default function Chat() {
             <IconButton
               label="终止回复"
               onClick={handleAbortCurrentRun}
-              className="h-9 w-9 rounded-full bg-slate-800 text-white hover:bg-slate-700"
+              surface="plain"
+              className="h-9 w-9 rounded-full !bg-[var(--color-accent-blue)] !text-white transition-colors duration-150 hover:!bg-[color-mix(in_srgb,var(--color-accent-blue)_82%,white)] hover:!text-white"
             >
-              <Square size={14} fill="currentColor" />
+              <Square size={14} />
             </IconButton>
           ) : (
             <IconButton
               label="发送"
               onClick={handleSend}
               disabled={!hasContent}
-              className="h-9 w-9 rounded-full bg-slate-800 text-white hover:bg-slate-700 disabled:bg-slate-300"
+              surface="plain"
+              className="h-9 w-9 rounded-full !bg-[var(--color-accent-blue)] !text-white transition-colors duration-150 hover:!bg-[color-mix(in_srgb,var(--color-accent-blue)_82%,white)] hover:!text-white disabled:!bg-slate-300"
             >
               <Send size={16} />
             </IconButton>
@@ -1093,9 +1138,7 @@ export default function Chat() {
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               {chatLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 size={24} className="animate-spin text-accent-blue" />
-                </div>
+                <ChatHistorySkeleton />
               ) : messages.length === 0 && !isDraftSession ? (
                 <div className="flex flex-col items-center justify-center py-20 text-light-text-secondary">
                   <MessageSquare size={40} className="mb-3 opacity-30" />
