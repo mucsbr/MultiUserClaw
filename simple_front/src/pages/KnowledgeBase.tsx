@@ -32,7 +32,6 @@ import type { BrowseDirectoryResult, BrowseFileResult, FileEntry } from '../lib/
 import type { LayoutOutletContext } from '../components/Layout.tsx'
 import type { AgentInfo } from '../lib/api.ts'
 
-const retiredBuiltInAgentIds = new Set(['manager', 'programmer', 'researcher', 'hr', 'doctor'])
 const maxUploadSizeLabel = '50MB'
 
 function trimSlashes(value: string): string {
@@ -113,10 +112,7 @@ export default function KnowledgeBase() {
   const [editorStatus, setEditorStatus] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const availableAgents = useMemo(
-    () => agents.filter(agent => agent.id && !retiredBuiltInAgentIds.has(agent.id)),
-    [agents],
-  )
+  const availableAgents = useMemo(() => agents.filter(agent => agent.id), [agents])
   const selectedAgentInfo = availableAgents.find(agent => agent.id === selectedAgent)
   const breadcrumbs = subPath ? subPath.split('/') : []
 

@@ -6,41 +6,44 @@ import {
   FileText,
   Globe2,
   PenLine,
-  Presentation,
 } from 'lucide-react'
 import AgentCreatePanel from '../components/AgentCreatePanel.tsx'
 import type { AgentInfo } from '../lib/api.ts'
 import type { LayoutOutletContext } from '../components/Layout.tsx'
 
 const builtInAgentIds = new Set([
-  'daily-assistant',
-  'web-operator',
-  'slide-maker',
-  'research-scout',
-  'writing-desk',
+  'main',
+  'manager',
+  'programmer',
+  'researcher',
+  'hr',
+  'doctor',
 ])
-const retiredBuiltInAgentIds = new Set(['manager', 'programmer', 'researcher', 'hr', 'doctor'])
 
 const agentMeta: Record<string, { description: string; icon: typeof Bot }> = {
-  'daily-assistant': {
-    description: '整理待办、规划下一步、跟进日常事项',
+  main: {
+    description: '默认对话入口，适合通用任务和日常协作',
     icon: Bot,
   },
-  'web-operator': {
-    description: '处理网页访问、表单、截图和在线流程',
-    icon: Globe2,
+  manager: {
+    description: '拆解任务、分配子 Agent、推进复杂目标',
+    icon: Compass,
   },
-  'slide-maker': {
-    description: '制作、改造和检查汇报演示材料',
-    icon: Presentation,
+  programmer: {
+    description: '处理代码、工程实现、调试和技术方案',
+    icon: FileText,
   },
-  'research-scout': {
+  researcher: {
     description: '调研公开信息，筛选来源并整理结论',
     icon: Compass,
   },
-  'writing-desk': {
-    description: '撰写邮件、方案、纪要、文案和润色稿',
+  hr: {
+    description: '处理招聘、人事流程和候选人沟通',
     icon: PenLine,
+  },
+  doctor: {
+    description: '面向医疗咨询场景的专业辅助 Agent',
+    icon: Globe2,
   },
 }
 
@@ -67,7 +70,7 @@ export default function Dashboard() {
 
   const builtInAgents = agents.filter(agent => builtInAgentIds.has(agent.id))
   const customAgents = agents.filter(
-    agent => !builtInAgentIds.has(agent.id) && !retiredBuiltInAgentIds.has(agent.id) && agent.id !== 'main',
+    agent => !builtInAgentIds.has(agent.id),
   )
 
   return (

@@ -28,10 +28,12 @@
     },
     "list": [
       {
-        "id": "daily-assistant",
-        "name": "日常助理",
+        "id": "main",
         "default": true,
-        "workspace": "Agents/daily-assistant",
+        "workspace": "Agents/main",
+        "subagents": {
+          "allowAgents": ["manager"]
+        },
         "tools": {
           "elevated": {
             "enabled": true,
@@ -41,9 +43,11 @@
         }
       },
       {
-        "id": "web-operator",
-        "name": "网页代办",
-        "workspace": "Agents/web-operator",
+        "id": "manager",
+        "workspace": "Agents/manager",
+        "subagents": {
+          "allowAgents": ["programmer", "researcher", "hr"]
+        },
         "tools": {
           "elevated": {
             "enabled": true,
@@ -53,9 +57,8 @@
         }
       },
       {
-        "id": "slide-maker",
-        "name": "演示文稿助手",
-        "workspace": "Agents/slide-maker",
+        "id": "programmer",
+        "workspace": "Agents/programmer",
         "tools": {
           "elevated": {
             "enabled": true,
@@ -65,9 +68,8 @@
         }
       },
       {
-        "id": "research-scout",
-        "name": "信息侦察员",
-        "workspace": "Agents/research-scout",
+        "id": "researcher",
+        "workspace": "Agents/researcher",
         "tools": {
           "elevated": {
             "enabled": true,
@@ -77,9 +79,20 @@
         }
       },
       {
-        "id": "writing-desk",
-        "name": "写作台",
-        "workspace": "Agents/writing-desk",
+        "id": "hr",
+        "workspace": "Agents/hr",
+        "tools": {
+          "elevated": {
+            "enabled": true,
+            "allowFrom": { "webchat": ["*"], "web": ["*"] }
+          },
+          "exec": { "security": "full" }
+        }
+      },
+      {
+        "id": "doctor",
+        "model": "kimi/kimi-k2.5",
+        "workspace": "Agents/doctor",
         "tools": {
           "elevated": {
             "enabled": true,
@@ -109,7 +122,7 @@
     },
     "agentToAgent": {
       "enabled": true,
-      "allow": ["daily-assistant", "web-operator", "slide-maker", "research-scout", "writing-desk"]
+      "allow": ["main", "manager", "programmer", "researcher", "hr", "doctor"]
     },
     "sessions": {
       "visibility": "all"

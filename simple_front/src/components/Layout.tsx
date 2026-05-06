@@ -68,7 +68,6 @@ const primaryNav = [
   { to: '/settings', label: '设置', icon: SettingsIcon },
 ]
 
-const retiredBuiltInAgentIds = new Set(['manager', 'programmer', 'researcher', 'hr', 'doctor'])
 const unreadSessionsStorageKey = 'openclaw_unread_sessions'
 
 function getSessionTitle(session: Session): string {
@@ -402,9 +401,7 @@ export default function Layout() {
 
     const agentIds = new Set<string>()
     sessionsByAgent.forEach((_value, agentId) => {
-      if (!retiredBuiltInAgentIds.has(agentId)) {
-        agentIds.add(agentId)
-      }
+      agentIds.add(agentId)
     })
     agentIds.delete('main')
 

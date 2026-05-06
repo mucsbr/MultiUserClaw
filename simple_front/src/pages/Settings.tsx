@@ -48,13 +48,13 @@ const themeOptions: Array<{ value: ThemeMode; label: string }> = [
 ]
 
 const SYSTEM_AGENT_IDS = new Set([
-  'daily-assistant',
-  'web-operator',
-  'slide-maker',
-  'research-scout',
-  'writing-desk',
+  'main',
+  'manager',
+  'programmer',
+  'researcher',
+  'hr',
+  'doctor',
 ])
-const RETIRED_BUILT_IN_AGENT_IDS = new Set(['manager', 'programmer', 'researcher', 'hr', 'doctor'])
 
 function getAgentDisplayName(agent: AgentInfo): string {
   return agent.identity?.name || agent.name || agent.id
@@ -145,10 +145,7 @@ function AgentsSettings() {
   const [notice, setNotice] = useState('')
 
   const systemAgents = useMemo(() => agents.filter(isSystemAgent), [agents])
-  const customAgents = useMemo(
-    () => agents.filter(agent => !isSystemAgent(agent) && !RETIRED_BUILT_IN_AGENT_IDS.has(agent.id)),
-    [agents],
-  )
+  const customAgents = useMemo(() => agents.filter(agent => !isSystemAgent(agent)), [agents])
 
   const loadAgents = async () => {
     setLoading(true)

@@ -97,13 +97,13 @@ function hasAssistantAfterLastUser(messages: SessionDetail['messages']): boolean
     .some(msg => msg.role === 'assistant' && msg.content.trim())
 }
 
-const retiredBuiltInAgentIds = new Set(['manager', 'programmer', 'researcher', 'hr', 'doctor'])
 const agentDescriptions: Record<string, string> = {
-  'daily-assistant': '整理待办、规划下一步、跟进日常事项',
-  'web-operator': '处理网页访问、表单、截图和在线流程',
-  'slide-maker': '制作、改造和检查汇报演示材料',
-  'research-scout': '调研公开信息，筛选来源并整理结论',
-  'writing-desk': '撰写邮件、方案、纪要、文案和润色稿',
+  main: '默认对话入口，适合通用任务和日常协作',
+  manager: '拆解任务、分配子 Agent、推进复杂目标',
+  programmer: '处理代码、工程实现、调试和技术方案',
+  researcher: '调研公开信息，筛选来源并整理结论',
+  hr: '处理招聘、人事流程和候选人沟通',
+  doctor: '面向医疗咨询场景的专业辅助 Agent',
 }
 
 function ChatHistorySkeleton() {
@@ -874,7 +874,7 @@ export default function Chat() {
       name: '默认',
       identity: { name: '默认' },
     }
-    const visibleAgents = agents.filter(agent => !retiredBuiltInAgentIds.has(agent.id))
+    const visibleAgents = agents
     return hasMain ? visibleAgents : [mainAgent, ...visibleAgents]
   }, [agents])
   const currentAgentId = activeSessionKey ? getAgentIdFromKey(activeSessionKey) : draftAgentId
