@@ -90,7 +90,7 @@ ENV OPENCLAW_SKIP_GMAIL_WATCHER=1
 ENV OPENCLAW_SKIP_CANVAS_HOST=1
 ENV OPENCLAW_DISABLE_BONJOUR=1
 ENV OPENCLAW_SKIP_PROVIDERS=1
-ENV OPENCLAW_SKIP_CRON=1
+ENV OPENCLAW_SKIP_CRON=0
 ENV OPENCLAW_LOAD_SHELL_ENV=0
 ENV OPENCLAW_SKIP_BROWSER_CONTROL_SERVER=1
 
@@ -131,7 +131,7 @@ ENV PATH="/app/node_modules/.bin:$PATH"
 ENV NODE_PATH="/app/node_modules"
 
 RUN --mount=type=cache,id=openclaw-bridge-pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    pnpm install --offline --frozen-lockfile --reporter=append-only
+    pnpm install --prefer-offline --frozen-lockfile --reporter=append-only
 
 # Clean previous build outputs, but do not delete source-tree .js files.
 # This repo intentionally keeps source JS assets/wrappers in src/ and extensions/

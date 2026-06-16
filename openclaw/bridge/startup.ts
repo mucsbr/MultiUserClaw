@@ -55,6 +55,7 @@ export function buildGatewayEnv(
   // so we explicitly remove it when channels are requested.
   if (env.BRIDGE_ENABLE_CHANNELS === "1") {
     delete result.OPENCLAW_SKIP_CHANNELS;
+    delete result.OPENCLAW_SKIP_PROVIDERS;
   }
   return result;
 }

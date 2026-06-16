@@ -239,7 +239,7 @@ def check_uv(fix: bool) -> CheckResult:
         return CheckResult(False, "uv 未安装")
 
     info("正在通过 pip 安装 uv ...")
-    r = run(sys.executable, "-m", "pip", "install", "uv", "--quiet", capture=False)
+    r = run(sys.executable, "-m", "pip", "install", "uv", "-i", "https://mirrors.aliyun.com/pypi/simple","--quiet", capture=False)
     if r.returncode == 0 and shutil.which("uv"):
         return CheckResult(True, "已安装 uv", fixed=True)
 
@@ -342,7 +342,7 @@ def check_platform_deps(fix: bool) -> CheckResult:
         return CheckResult(False, "nanobot-platform 未安装，运行 prepare.py（不带 --check）自动安装")
 
     info("正在安装 platform 依赖（uv pip install -e platform/）...")
-    r = run(*_uv_cmd(), "pip", "install", "-e", str(PLATFORM_DIR), capture=False)
+    r = run(*_uv_cmd(), "pip", "install", "-e", str(PLATFORM_DIR), "-i", "https://mirrors.aliyun.com/pypi/simple", capture=False)
     if r.returncode == 0 and _is_pkg_installed("nanobot-platform"):
         return CheckResult(True, "nanobot-platform 已安装", fixed=True)
 

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import os
 import secrets
 import tarfile
 import time
@@ -293,6 +294,10 @@ async def create_container(db: AsyncSession, user_id: str) -> Container | None:
         "DEPLOY_VERSION": settings.deploy_version,
         "TZ": settings.container_tz,
         "BRIDGE_ENABLE_CHANNELS": "1",
+        "NANOBOT_SKILLS_MARKETPLACE_REPO": os.getenv("NANOBOT_SKILLS_MARKETPLACE_REPO", ""),
+        "HTTP_PROXY": os.getenv("USER_HTTP_PROXY", ""),
+        "HTTPS_PROXY": os.getenv("USER_HTTPS_PROXY", ""),
+        "NO_PROXY": os.getenv("USER_NO_PROXY", ""),
     }
     # if sso_token:
     #     container_env["SSO_TOKEN"] = sso_token

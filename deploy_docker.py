@@ -465,7 +465,7 @@ def main():
         # 并行构建: openclaw 基础镜像 + compose 服务
         log("并行构建 openclaw 基础镜像 + compose 服务...")
         tasks = {
-            "openclaw:latest": "docker build --no-cache -f openclaw/Dockerfile.bridge -t openclaw:latest openclaw/",
+            "openclaw:latest": "docker build -f openclaw/Dockerfile.bridge --build-arg HTTP_PROXY=http://10.255.200.17:7897 --build-arg HTTPS_PROXY=http://10.255.200.17:7897 -t openclaw:latest openclaw/",
             "compose services": f"docker compose {compose_args} build --parallel",
         }
         with concurrent.futures.ThreadPoolExecutor(max_workers=len(tasks)) as pool:
