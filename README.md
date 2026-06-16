@@ -479,6 +479,10 @@ AIHUBMIX_API_KEY=sk-xxxxxxxxxxxx
 # 默认模型（新用户容器使用此模型）
 DEFAULT_MODEL=dashscope/qwen3-coder-plus
 
+# 强制路由模型（可选；留空表示尊重用户容器请求的模型）
+# 设置后无需重建用户容器，gateway 会把所有 LLM 请求改路由到该模型
+ROUTE_MODEL=
+
 # 平台代理模型输入能力（要支持图片识别请保留 text,image）
 # 可选：text 或 text,image
 NANOBOT_PROXY__MODEL_INPUT=text,image
@@ -607,7 +611,7 @@ export PLATFORM_DEV_GATEWAY_URL="ws://127.0.0.1:18789"
 python -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
-> 注意：从项目根目录 .env 文件读取 *_API_KEY、*_API_BASE、JWT_SECRET、DEFAULT_MODEL 等配置。
+> 注意：从项目根目录 .env 文件读取 *_API_KEY、*_API_BASE、JWT_SECRET、DEFAULT_MODEL、ROUTE_MODEL 等配置。
 
 **4. Frontend Dev Server (端口 3080)**
 

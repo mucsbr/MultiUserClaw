@@ -61,6 +61,7 @@ def log_settings_summary() -> None:
     logger.info("  开发模式 openclaw : %s", settings.dev_openclaw_url or "(关闭)")
     logger.info("  开发模式 gateway  : %s", settings.dev_gateway_url or "(关闭)")
     logger.info("  默认模型          : %s", settings.default_model)
+    logger.info("  强制路由模型      : %s", settings.route_model or "(关闭)")
     logger.info("  数据库            : %s", settings.database_url.split("@")[-1] if "@" in settings.database_url else settings.database_url)
 
     # LLM 供应商密钥

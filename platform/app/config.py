@@ -36,6 +36,9 @@ class Settings(BaseSettings):
 
     # Default model for new users
     default_model: str = "claude-sonnet-4-5"
+    # Optional gateway-level forced route target. When set, every incoming LLM
+    # request is forwarded to this model regardless of the user/container model.
+    route_model: str = ""
 
     # Docker
     openclaw_image: str = "openclaw:latest"
