@@ -213,6 +213,15 @@ def _resolve_provider(model: str) -> tuple[str, str, str | None, dict[str, str] 
     )
 
 
+def _resolve_route_model(requested_model: str) -> str:
+    route_model = settings.route_model.strip()
+    if not route_model:
+        return requested_model
+    if route_model != requested_model:
+        logger.info("强制模型路由: requested=%s → route_model=%s", requested_model, route_model)
+    return route_model
+
+
 # ---------------------------------------------------------------------------
 # Quota check
 # ---------------------------------------------------------------------------
@@ -298,11 +307,18 @@ async def proxy_chat_completion(
     - api_base: injected for providers that need it
     - stream_options: injected for streaming usage tracking
     """
-    model = raw_request.get("model", "")
+    requested_model = raw_request.get("model", "")
     stream = raw_request.get("stream", False)
     messages = raw_request.get("messages", [])
+    model = _resolve_route_model(requested_model)
 
-    logger.info("收到 LLM 请求: model=%s, stream=%s, 消息数=%d", model, stream, len(messages))
+    logger.info(
+        "收到 LLM 请求: requested_model=%s, routed_model=%s, stream=%s, 消息数=%d",
+        requested_model,
+        model,
+        stream,
+        len(messages),
+    )
 
     # 1. Authenticate
     container = None
@@ -436,6 +452,8 @@ async def proxy_chat_completion(
                             resource=model,
                             detail={
                                 "stream": True,
+                                "requested_model": requested_model,
+                                "routed_model": model,
                                 "input_tokens": total_input,
                                 "output_tokens": total_output,
                                 "total_tokens": total,
@@ -463,6 +481,8 @@ async def proxy_chat_completion(
             resource=model,
             detail={
                 "stream": False,
+                "requested_model": requested_model,
+                "routed_model": model,
                 "input_tokens": usage.prompt_tokens or 0,
                 "output_tokens": usage.completion_tokens or 0,
                 "total_tokens": usage.total_tokens or 0,
