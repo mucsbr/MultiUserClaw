@@ -120,6 +120,8 @@ export default function UsersPage() {
                 <TableHead>运行模式</TableHead>
                 <TableHead>状态</TableHead>
                 <TableHead>今日用量</TableHead>
+                <TableHead>近7天用量</TableHead>
+                <TableHead>总用量</TableHead>
                 <TableHead>创建时间</TableHead>
                 <TableHead>操作</TableHead>
               </TableRow>
@@ -151,6 +153,8 @@ export default function UsersPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>{user.tokens_used_today.toLocaleString()}</TableCell>
+                  <TableCell>{user.tokens_used_7d.toLocaleString()}</TableCell>
+                  <TableCell>{user.tokens_used_total.toLocaleString()}</TableCell>
                   <TableCell>{user.created_at ? new Date(user.created_at).toLocaleDateString() : "-"}</TableCell>
                   <TableCell className="space-x-2">
                     <Button size="sm" variant="outline" onClick={() => openEdit(user)}>编辑</Button>

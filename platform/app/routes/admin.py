@@ -35,6 +35,8 @@ class UserSummary(BaseModel):
     shared_agent_id: str | None = None
     shared_agent_status: str | None = None
     tokens_used_today: int = 0
+    tokens_used_7d: int = 0
+    tokens_used_total: int = 0
 
 
 class PaginatedUsers(BaseModel):
@@ -108,6 +110,7 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
 ):
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = today_start - timedelta(days=6)  # today + previous 6 days = 7-day window
 
     # Subquery: today's token usage per user
     usage_sub = (
@@ -116,6 +119,27 @@ async def list_users(
             func.coalesce(func.sum(UsageRecord.total_tokens), 0).label("tokens_today"),
         )
         .where(UsageRecord.created_at >= today_start)
+        .group_by(UsageRecord.user_id)
+        .subquery()
+    )
+
+    # Subquery: last 7 days token usage per user
+    usage_7d_sub = (
+        select(
+            UsageRecord.user_id,
+            func.coalesce(func.sum(UsageRecord.total_tokens), 0).label("tokens_7d"),
+        )
+        .where(UsageRecord.created_at >= week_start)
+        .group_by(UsageRecord.user_id)
+        .subquery()
+    )
+
+    # Subquery: all-time total token usage per user
+    usage_total_sub = (
+        select(
+            UsageRecord.user_id,
+            func.coalesce(func.sum(UsageRecord.total_tokens), 0).label("tokens_total"),
+        )
         .group_by(UsageRecord.user_id)
         .subquery()
     )
@@ -137,10 +161,14 @@ async def list_users(
             SharedAgentBinding.openclaw_agent_id.label("shared_agent_id"),
             SharedAgentBinding.status.label("shared_agent_status"),
             func.coalesce(usage_sub.c.tokens_today, 0).label("tokens_used_today"),
+            func.coalesce(usage_7d_sub.c.tokens_7d, 0).label("tokens_used_7d"),
+            func.coalesce(usage_total_sub.c.tokens_total, 0).label("tokens_used_total"),
         )
         .outerjoin(Container, Container.user_id == User.id)
         .outerjoin(SharedAgentBinding, SharedAgentBinding.user_id == User.id)
         .outerjoin(usage_sub, usage_sub.c.user_id == User.id)
+        .outerjoin(usage_7d_sub, usage_7d_sub.c.user_id == User.id)
+        .outerjoin(usage_total_sub, usage_total_sub.c.user_id == User.id)
     )
 
     # Search filter – escape SQL LIKE wildcards to prevent injection
@@ -177,6 +205,8 @@ async def list_users(
             shared_agent_id=row.shared_agent_id,
             shared_agent_status=row.shared_agent_status,
             tokens_used_today=row.tokens_used_today,
+            tokens_used_7d=row.tokens_used_7d,
+            tokens_used_total=row.tokens_used_total,
         )
         for row in rows
     ]

@@ -22,6 +22,8 @@ export interface UserSummary {
   shared_agent_id: string | null;
   shared_agent_status: string | null;
   tokens_used_today: number;
+  tokens_used_7d: number;
+  tokens_used_total: number;
 }
 
 export interface PaginatedUsers {
